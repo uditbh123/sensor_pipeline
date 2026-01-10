@@ -39,6 +39,9 @@ pip install rosbags numpy matplotlib
 
 ---
 
+
+---
+
 ## What We Have Built (Day 2)
 1.  **C++ Processing Engine**: Initialized a C++ project structure to process high-performance sensor data.
 2.  **Automated Dependency Management**: Created a Python script (`setup_cpp_dependencies.py`) to automatically fetch and configure external C++ libraries.
