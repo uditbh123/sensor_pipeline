@@ -35,3 +35,27 @@ During the initial setup, we encountered several critical issues:
 conda create -n rosbag_test python=3.10 -y
 conda activate rosbag_test
 pip install rosbags numpy matplotlib
+
+
+---
+
+## What We Have Built (Day 2)
+1.  **C++ Processing Engine**: Initialized a C++ project structure to process high-performance sensor data.
+2.  **Automated Dependency Management**: Created a Python script (`setup_cpp_dependencies.py`) to automatically fetch and configure external C++ libraries.
+3.  **Database Integration**: Successfully integrated the SQLite "Amalgamation" source code directly into the C++ build tree, allowing us to read ROS 2 `.db3` files natively without requiring the full ROS 2 SDK.
+
+## Technical Challenges & Solutions (Day 2)
+
+### 1. Missing C++ Tools on Windows
+* **Problem:** Windows does not ship with standard C++ build tools (Make, G++, CMake), usually requiring a heavy Visual Studio installation (4GB+).
+* **Solution:** We leveraged the existing Conda environment to install the `m2w64-toolchain` and `cmake` from `conda-forge`. This kept the environment lightweight and isolated.
+
+### 2. "Why didn't we just download the SQLite Zip manually?"
+* **Decision:** Instead of manually downloading the SQLite zip file, extracting it, and placing it in the folder, we wrote `src/setup_cpp_dependencies.py`.
+* **Reasoning:**
+    * **Reproducibility:** A manual process is error-prone. If another developer clones this repo, they shouldn't have to read a long instruction manual to find the right website and buttons.
+    * **Automation:** By scripting the download, anyone can set up the entire C++ environment with a single command (`python src/setup_cpp_dependencies.py`). This is a best practice known as **"Infrastructure as Code."**
+
+### 3. Build System Configuration
+* **Problem:** Connecting a raw C library (SQLite) to a C++ project in CMake requires specific linking instructions.
+* **Solution:** configured `CMakeLists.txt` to include the `sqlite_lib` directory and explicitly link the `sqlite3.c` source file into the final executable, treating it as part of our own code ("Amalgamation").
