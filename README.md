@@ -108,17 +108,58 @@ We successfully implemented a C++ based Blur Detector module to analyze frame sh
 * **Issue (Environment Setup):** Getting the C++ processor build system running in the `rosbag_test` environment.
     * **Resolution:** Successfully configured the build in `src/cpp_processor/build` to compile and execute the blur detection logic.
 
+### 🚀 Day 4: Real-World Data & Computer Vision (Current Status)
+**Focus:** "The Reality Check" – Kaggle Datasets & Edge Detection.
 
+**1. Data Ingestion Pipeline (`ingest_kaggle_data.py`)**
+We moved away from synthetic noise and built a bridge to the real world.
+* **Source:** Ingested the **Kaggle Blur Dataset** (Real photos: Sharp vs. Blurry).
+* **Normalization:** Implemented a resizing logic to standardize all inputs to `640x480` to prevent buffer crashes.
+* **Ground Truth Injection:** We "snuck" the answer key (Label: `SHARP_GT` or `BLURRY_GT`) into the message headers, allowing us to mathematically calculate pipeline accuracy.
 
-## How to Run
+**2. The "RGB Trap" & Grayscale Fix**
+* **Problem:** Our initial detector gave blurry colorful images (e.g., a blurry red ball on green grass) *higher* scores than sharp gray images.
+* **Root Cause:** The algorithm was calculating **Color Contrast** (Red vs. Green), not **Edge Sharpness**.
+* **Solution:** We implemented a raw C++ `toGrayscale` function using the luminance formula ($0.299R + 0.587G + 0.114B$) to isolate structural edges from color data.
+
+**3. Laplacian Edge Detection (From Scratch)**
+* **Implementation:** Instead of importing OpenCV in C++, we wrote a raw **3x3 Convolution Kernel**:
+  $$
+  \begin{bmatrix}
+  0 & 1 & 0 \\
+  1 & -4 & 1 \\
+  0 & 1 & 0
+  \end{bmatrix}
+  $$
+* **Result:** This filter cancels out flat colors and only activates when it hits a sharp edge.
+* **Metrics:** Achieved **~85.7% Accuracy** on real-world test data after tuning the rejection threshold to `200.0`.
+
+**Expected Output:**
+```text
+--- ROBOTICS DATA PIPELINE ---
+Pipeline: Raw RGB -> Grayscale -> Laplacian Edge Detection
+----------------------------------------
+Frame 0 | Score: 777 | Pred: SHARP | GT: SHARP [OK]
+...
+Frame 50 | Score: 60 | Pred: BLURRY | GT: BLURRY [OK]
+----------------------------------------
+FINAL ACCURACY: 85.71%
+---
+
+## 🛠️ How to Run
 
 ### 1. Prerequisites
-- Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
-- Open your terminal.
+* Install [Miniconda](https://docs.conda.io/en/latest/miniconda.html).
+* Ensure you have the `data/` folder (or run the ingest script).
 
 ### 2. Setup Environment
 ```bash
+# Create and activate environment
 conda create -n rosbag_test python=3.10 -y
 conda activate rosbag_test
-pip install rosbags numpy matplotlib
 
+# Install Python dependencies
+pip install rosbags numpy matplotlib opencv-python
+
+# Install C++ Toolchain (Windows)
+conda install -c conda-forge cmake m2w64-toolchain make
