@@ -1,19 +1,40 @@
-cmake_minimum_required(VERSION 3.10)
-project(SensorProcessor)
+# --- Python ---
+__pycache__/
+*.pyc
 
-set(CMAKE_CXX_STANDARD 14)
+# --- Virtual Environments ---
+venv/
+env/
+.env
 
-message(STATUS "Looking for SQLite in: ${CMAKE_CURRENT_SOURCE_DIR}/sqlite_lib")
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/sqlite_lib)
+# --- IDE Settings ---
+.vscode/
+.idea/
 
-# --- PROGRAM 1: The Simple Reader (Day 2) ---
-add_executable(processor 
-    main.cpp
-    sqlite_lib/sqlite3.c
-)
+# --- Data (CRITICAL) ---
+# We generate this or download it. Never upload to GitHub.
+data/
+*.db3
 
-# --- PROGRAM 2: The Blur Detector (Day 3) ---
-add_executable(blur_detector 
-    blur_detector.cpp
-    sqlite_lib/sqlite3.c
-)
+# --- C++ Build Artifacts (NEW) ---
+# Ignore the build folder where CMake does its work
+build/
+src/cpp_processor/build/
+
+# Ignore compiled executables and objects
+*.exe
+*.o
+*.obj
+*.dll
+*.dylib
+*.so
+
+# --- CMake Temporary Files ---
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# --- OS System Files ---
+.DS_Store
+Thumbs.db

@@ -12,7 +12,7 @@ if os.path.exists(BAG_PATH):
     shutil.rmtree(BAG_PATH)
 
 os.makedirs(os.path.dirname(BAG_PATH), exist_ok=True)
-print(f"Generating synthetic data at {BAG_PATH}...")
+print(f"Generating synthetic data with DEFECTS at {BAG_PATH}...")
 
 # 2. Load Types
 typestore = get_typestore(Stores.LATEST)
@@ -35,11 +35,20 @@ with Writer(BAG_PATH) as writer:
             frame_id='camera_optical_frame'
         )
         
-        # Noise Image (100x100x3)
-        noise = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
-        
-        # FIX: Keep as uint8 numpy array, flatten to 1D with correct dtype
-        image_data = noise.flatten().astype(np.uint8)
+        # --- LOGIC CHANGE: INJECT "BAD" DATA ---
+        if 3 <= i <= 5:
+            # BAD FRAME: Solid Gray (Variance = 0)
+            # Simulates a lens cap on or extreme motion blur
+            print(f" [!] Generating BAD frame (ID: {i}) - Flat Gray")
+            # Create 100x100x3 filled with value 127
+            raw_img = np.full((100, 100, 3), 127, dtype=np.uint8)
+        else:
+            # GOOD FRAME: Random Noise (High Variance)
+            # Simulates a sharp, high-texture scene
+            raw_img = np.random.randint(0, 255, (100, 100, 3), dtype=np.uint8)
+
+        # Flatten
+        image_data = raw_img.flatten().astype(np.uint8)
         
         msg = Image(
             header=my_header,
@@ -48,15 +57,10 @@ with Writer(BAG_PATH) as writer:
             encoding='rgb8',
             is_bigendian=0, 
             step=300,  # width * channels (100 * 3)
-            data=image_data  # Pass numpy array directly
+            data=image_data
         )
         
         writer.write(connection, timestamp_nanos, typestore.serialize_cdr(msg, msgtype))
-        
-        if (i + 1) % 5 == 0:
-            print(f"  Written {i + 1}/10 images...")
 
-print("SUCCESS: Synthetic data created successfully!")
+print("\nSUCCESS: Synthetic data with DEFECTS created!")
 print(f"Output: {os.path.abspath(BAG_PATH)}")
-print("\nTo read this bag, use:")
-print(f"  python src/read_data.py")

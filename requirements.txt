@@ -1,0 +1,8 @@
+rosbags==0.9.16
+apache-beam
+pandas
+numpy
+pybind11
+streamlit
+pytest
+matplotlib

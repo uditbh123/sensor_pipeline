@@ -48,6 +48,68 @@ Currently, it focuses on **Synthetic Data Generation** and **Data Ingestion** us
 
 ---
 
+# Day 2: Building the C++ Data Ingestion Engine
+
+## 🚀 What We Accomplished
+Today, we shifted from Python prototyping to high-performance C++ development. We successfully built the "Ingestion Layer" that reads raw sensor data directly from the storage database.
+
+### 1. Set Up the C++ Toolchain (Windows)
+* **Action:** Installed `cmake`, `make`, and the `g++` compiler (MinGW) via Conda.
+* **Result:** Created a portable, isolated C++ development environment without needing a heavy Visual Studio installation.
+
+### 2. Automated Dependency Management
+* **Action:** Wrote `src/setup_cpp_dependencies.py` to automatically download and extract the SQLite "Amalgamation" source code.
+* **Result:** We eliminated external library installation steps. Anyone cloning the repo can just run the script to get the dependencies.
+
+### 3. Integrated SQLite into CMake
+* **Action:** Configured `CMakeLists.txt` to compile `sqlite3.c` alongside our own code.
+* **Result:** We achieved a "Static Build" where the database engine is built directly into our executable, preventing version conflicts.
+
+### 4. Built the Data Reader (`processor.exe`)
+* **Action:** Wrote `main.cpp` using raw SQL queries (`SELECT timestamp, data FROM messages`) to access the ROS 2 bag file.
+* **Result:** Successfully verified the pipeline by printing the timestamps and byte sizes of all 10 synthetic frames.
+
+---
+
+## 🛠️ Technical Challenges & Solutions
+
+### Challenge 1: The Missing Compiler
+* **Issue:** Windows does not have native C++ tools. Running `cmake` initially returned "Command not found".
+* **Solution:** We installed the `m2w64-toolchain` from `conda-forge`. This gave us a Unix-like build environment directly inside PowerShell.
+
+### Challenge 2: The "Ghost" Build Path
+* **Issue:** After adding the SQLite library, the compiler complained `fatal error: sqlite3.h: No such file`. This persisted even after we fixed the code.
+* **Solution:** We learned that CMake "caches" old paths. We fixed it by using the absolute path variable `${CMAKE_CURRENT_SOURCE_DIR}` in the recipe and performing a clean build (deleting the `build` folder).
+
+### Challenge 3: Linking Errors
+* **Issue:** The build failed at the final step with `cannot find -lstatic`.
+* **Solution:** We identified an unnecessary flag in `CMakeLists.txt`. Since we were compiling the source code directly (Amalgamation), we didn't need to link against a pre-built "static" library file.
+
+### Challenge 4: The "Empty Database" Trap
+* **Issue:** The program ran but crashed with `no such table: messages`.
+* **Root Cause:** We pointed the program to `bag.db3`, which didn't exist. SQLite silently created a new, empty file with that name instead of throwing an error.
+* **Solution:** We inspected the directory, found the correct file (`synthetic_bag.db3`), and updated our command arguments.
+
+---
+
+## Day 3: Robotics Blur Detector Implementation
+
+We successfully implemented a C++ based Blur Detector module to analyze frame sharpness in the sensor pipeline.
+
+### What we have implemented:
+* **Laplacian Variance Algorithm:** Utilized OpenCV's Laplacian operator to calculate the variance of pixels in each frame. High variance indicates sharp edges; low variance indicates blur.
+* **Frame Scoring System:** Each frame is assigned a specific numeric score (e.g., ~48,000 range in current tests) to quantify clarity.
+* **Status Classification:** Added logic to automatically classify frames as `SHARP` or `BLURRY` based on a definable threshold.
+* **Console Logging:** Implemented clear, frame-by-frame status logging to the terminal for debugging and verification.
+
+### Issues we faced & Resolution:
+* **Issue (Threshold Sensitivity):** Determining the correct numeric cutoff for "Blurry" vs "Sharp" was difficult as it varies by lighting and scene texture.
+    * **Resolution:** We monitored the raw Laplacian variance scores (averaging around 48k for sharp frames) to establish a baseline for our specific sensor data.
+* **Issue (Environment Setup):** Getting the C++ processor build system running in the `rosbag_test` environment.
+    * **Resolution:** Successfully configured the build in `src/cpp_processor/build` to compile and execute the blur detection logic.
+
+
+
 ## How to Run
 
 ### 1. Prerequisites
